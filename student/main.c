@@ -48,15 +48,87 @@ void new_game(Session *session){
 }
 
 void save_game(Session *session){
-    // ToDo - Lab 2
+    
+    char filename[100]; // array que emagatzema una memoria
+    FILE * f; //punter que apunta a un fitxer obert
+    scanf("%s", filename);   
+    f = fopen(filename, "w"); //obri el fitxer 
+    if (f == NULL){ //agafa l'error de fopen, si no hi ha res es null i no retorna res, voldrà dir que el fitxer no s'ha pogut obrir.
+        return;
+    }
+    fprintf(f, "Score:  %d\n", session-> current_game.score);
+    fprintf(f, "Level: %d\n", session -> current_game.level);  //el fprintf permet guardar les dades dins el fitxer
+    fprintf(f,"State: \n");
+    fprintf(f, "Rows: %d\n", session -> current_game.state.rows);
+    fprintf(f, "Columns: %d\n", session -> current_game.state.columns);
+
+    for (int i = 0; i < session-> current_game.state.rows; i++) {            //guarda el taulell del joc
+        for (int j = 0; j < session-> current_game.state.columns; j++) {
+            fprintf(f, "%c", session-> current_game.state.grid[i][j]);
+        }
+        fprintf(f, "\n");
+    }
+
+    fclose(f);  // ToDo - Lab 2
+
 }
 
-void load_game(Session *session){
-    // ToDo - Lab 2
+void load_game(Session *session) {
+
+    char filename[100]; // allibera espai per al fitxer
+    printf("Enter file name to load: "); //demana al usuari quin fitxer hem de carregar
+    scanf("%s", filename);
+
+    FILE *file = fopen(filename, "r"); // Aquesta funció ens permet accedir al fitxer en mode lectura
+
+    if (file == NULL) {                     //controlem que no hi hagi problemes i que els fitxer estigui
+        printf("Error opening file.\n");    // correctament creat si no ho està sortiria
+        return;
+    }
+    free_game(&session->current_game);
+
+    Game *g = &session->current_game; //creem un punter anomenat g que ens permet accedir de manerà més àgil al game que hi ha dins sessions al data struct.
+
+    fscanf(file, "Score: %d\n", &g->score); //amb scanf permet llegir el score, el lvl i el state.
+    fscanf(file, "Level: %d\n", &g->level);
+    fscanf(file, "State:\n");
+
+    int rows, columns; //establim dues variables sense reservar memoria
+
+    fscanf(file, "Rows: %d\n", &rows); 
+    fscanf(file, "Columns: %d\n", &columns);
+
+    g->state.rows = rows;
+    g->state.columns = columns;
+
+    g->state.grid = make_grid(rows, columns);
+
+    for (int i = 0; i < rows; i++) {        //recorrem cada fila i analitzem cada caracter i el que fa es guardarlo en la posició adequada.
+        for (int j = 0; j < columns; j++) {
+            fscanf(file, "%c", &g->state.grid[i][j]);
+        }
+        fscanf(file, "\n");
+    }
+fclose(file); // sortim del fitxer
+
+printf("Game loaded successfully.\n");
 }
 
-void resume_game(Session *session){
-    // ToDo - Lab 2  	
+void resume_game(Session *session) {
+
+    Game *g = &session->current_game; //manera d'accedir al game que hi ha dins els session, utilitzat previament a la la funció anterior.
+
+    if (g->state.grid == NULL) {       //Aquesta funció ens permet analitzar l'estat de la graella, si es nula 
+        printf("No game to resume.\n"); //ens dira simplement que no hi hagut cap sessió de joc
+        return;
+    }
+
+    if (is_terminal(g->state)) {     //En aquest cas comprovem si segueix activa o no; ja que si la comprovació
+        printf("Game already finished.\n"); //ens diu que el joc esta acabat no hem de continuar.
+        return;
+    }
+
+    run_game(session);  // mateixa funció que uses a New Game
 }
 
 void print_menu(){
